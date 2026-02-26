@@ -1,0 +1,28 @@
+---
+- name: Zip a single HTML file into a ZIP (local on Jenkins)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    src_dir:  "{{ lookup('env','WORK_DIR') | default('.', true) }}"
+    src_file: "{{ lookup('env','SRC_FILE') | default('index.html', true) }}"
+    zip_name: "{{ lookup('env','ZIP_NAME') | default('index.zip', true) }}"
+
+  tasks:
+    - name: Ensure the source file exists
+      ansible.builtin.stat:
+        path: "{{ src_dir }}/{{ src_file }}"
+      register: src_stat
+
+    - name: Fail if source file is missing
+      ansible.builtin.fail:
+        msg: "File not found: {{ src_dir }}/{{ src_file }}"
+      when: not src_stat.stat.exists
+
+    - name: Create ZIP from the source file
+      ansible.builtin.archive:
+        path: "{{ src_dir }}/{{ src_file }}"
+        dest: "{{ src_dir }}/{{ zip_name }}"
+        format: zip
+        force_archive: true
